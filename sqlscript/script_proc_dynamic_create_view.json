@@ -1,0 +1,17 @@
+{
+	"name": "script_proc_dynamic_create_view",
+	"properties": {
+		"content": {
+			"query": "create or alter proc dbo.usp_dynamic_create_view\n(\n\t @schema_name   varchar (100)\n\t,@table_name    varchar (100)\n    ,@view_name     varchar (100)\n)\nas \nbegin\n\tDECLARE @QUERY NVARCHAR(MAX)\n\tSET @QUERY =   \n    CONCAT (\n        'CREATE OR ALTER VIEW ', @schema_name,'.',@view_name, \n        CHAR(10)+CHAR(13),\n        'AS',\n        CHAR(10)+CHAR(13),\n        'SELECT * FROM OPENROWSET(\n        BULK ''refined/',@table_name,'/''',\n       ',DATA_SOURCE = ''datalakepocgenerica''',\n        CHAR(10)+CHAR(13),\n        ',FORMAT = ''DELTA''',\n    ') AS [result]'\n)\n\tEXEC (@QUERY)\nend \n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "sqldb_poc_generica",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

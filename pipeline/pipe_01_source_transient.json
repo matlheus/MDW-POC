@@ -1,0 +1,263 @@
+{
+	"name": "pipe_01_source_transient",
+	"properties": {
+		"activities": [
+			{
+				"name": "lookup_controller",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_xlsx_generic",
+						"type": "DatasetReference",
+						"parameters": {
+							"containerName": "controller",
+							"directoryName": "metadados",
+							"fileName": "controller_poc.xlsx",
+							"sheetName": "source_to_transient"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Filter_controller",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "lookup_controller",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('lookup_controller').output.value",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().flag_controller,'1' )",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach_tables",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter_controller",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter_controller').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "If Condition",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(item().source_type_load,'FULL')",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "source_to_transient_incremental",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "SqlServerSource",
+												"sqlReaderQuery": {
+													"value": "@concat(item().source_query,' ',item().filter_source_column)",
+													"type": "Expression"
+												},
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_sql_generic",
+												"type": "DatasetReference",
+												"parameters": {
+													"schemaName": {
+														"value": "@item().source_schema_name",
+														"type": "Expression"
+													},
+													"tableName": {
+														"value": "@item().source_table_name",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "ds_parquet_generic",
+												"type": "DatasetReference",
+												"parameters": {
+													"containerName": {
+														"value": "@item().container_target",
+														"type": "Expression"
+													},
+													"directoryName": {
+														"value": "@item().directory_target",
+														"type": "Expression"
+													},
+													"fileName": {
+														"value": "@item().file_target",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "source_to_transient_full",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "SqlServerSource",
+												"sqlReaderQuery": {
+													"value": "@item().source_query",
+													"type": "Expression"
+												},
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_sql_generic",
+												"type": "DatasetReference",
+												"parameters": {
+													"schemaName": {
+														"value": "@item().source_schema_name",
+														"type": "Expression"
+													},
+													"tableName": {
+														"value": "@item().source_table_name",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "ds_parquet_generic",
+												"type": "DatasetReference",
+												"parameters": {
+													"containerName": {
+														"value": "@item().container_target",
+														"type": "Expression"
+													},
+													"directoryName": {
+														"value": "@item().directory_target",
+														"type": "Expression"
+													},
+													"fileName": {
+														"value": "@item().file_target",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "01_INGESTION"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-10-25T10:41:19Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

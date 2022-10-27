@@ -1,0 +1,106 @@
+{
+	"name": "pipe_00_orquestration",
+	"properties": {
+		"activities": [
+			{
+				"name": "pipe_01_source_transient",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipe_01_source_transient",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "pipe_01_raw_databricks",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "pipe_01_source_transient",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipe_01_raw_databricks",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "pipe_02_trusted_databricks",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "pipe_01_raw_databricks",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipe_02_trusted_databricks",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "pipe_03_refined_databricks",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "pipe_02_trusted_databricks",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipe_03_refined_databricks",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "pipe_01_create_views",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "pipe_03_refined_databricks",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipe_01_create_views",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"folder": {
+			"name": "00_ORQUESTRATION"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-10-25T17:20:55Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

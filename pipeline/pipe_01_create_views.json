@@ -1,0 +1,119 @@
+{
+	"name": "pipe_01_create_views",
+	"properties": {
+		"activities": [
+			{
+				"name": "Lookup_controller",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_xlsx_generic",
+						"type": "DatasetReference",
+						"parameters": {
+							"containerName": "controller",
+							"directoryName": "metadados",
+							"fileName": "controller_poc.xlsx",
+							"sheetName": "create_views"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Filter_flag_controller",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Lookup_controller",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup_controller').output.value",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals( item().flag_controller, '1') ",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach_Create_Views",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter_flag_controller",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter_flag_controller').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Script_Create_View",
+							"type": "Script",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "ls_synapse_serveless",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "NonQuery",
+										"text": {
+											"value": "@concat('EXEC dbo.usp_dynamic_create_view @schema_name= ', '''',item().schema_name, '''', ',@table_name= ',  '''',item().table_name,'''', ',@view_name= ',  '''',item().view_name,'''')",
+											"type": "Expression"
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "03_SERVERLESS"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-10-25T13:05:53Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

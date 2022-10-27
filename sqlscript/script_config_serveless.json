@@ -1,0 +1,17 @@
+{
+	"name": "script_config_serveless",
+	"properties": {
+		"content": {
+			"query": "use master\nGO\n\ndrop database sqldb_poc_generica\nGO\n\ncreate database  sqldb_poc_generica\nGO\n\nuse sqldb_poc_generica\nGO\n\n-- required to create credentials\nCREATE MASTER KEY ENCRYPTION BY PASSWORD = '4t4$AvVyg@Ws'\nGO\n\n-- create a credential that uses the Serverless engine managed identity\nCREATE DATABASE SCOPED CREDENTIAL adls_credential\nWITH IDENTITY = 'Managed Identity'\nGO\n\n-- create a credential that uses the SAS Token\n/*\nCREATE DATABASE SCOPED CREDENTIAL [adls_credentital]\nWITH IDENTITY = 'SHARED ACCESS SIGNATURE',\nSECRET = 'secret-sas-token'\nGO\n*/\n\n-- now create other reference objects\n-- DROP EXTERNAL DATA SOURCE Transient\n-- the external data source points to the Azure Data Lake folder\n\nCREATE EXTERNAL DATA SOURCE datalakepocgenerica\nWITH (    LOCATION   = 'https://adlspocgenericaluiz.dfs.core.windows.net/',\n          CREDENTIAL = [adls_credential] \n)\nGO\n\n\n-- a file format for CSV with header\nCREATE EXTERNAL FILE FORMAT NativeCsv\nWITH (  \n    FORMAT_TYPE = DELIMITEDTEXT,\n    FORMAT_OPTIONS ( FIELD_TERMINATOR = ';')\n);\nGO\n\n-- create external file format\nCREATE EXTERNAL FILE FORMAT NativeParquet\nWITH (  \n    FORMAT_TYPE = PARQUET,\n    DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'\n);\nGO\n\n\nCREATE SCHEMA stg\nGO\n\nCREATE SCHEMA dw\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "sqldb_poc_generica",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

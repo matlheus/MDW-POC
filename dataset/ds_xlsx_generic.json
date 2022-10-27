@@ -1,0 +1,52 @@
+{
+	"name": "ds_xlsx_generic",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_data_lake",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"containerName": {
+				"type": "string",
+				"defaultValue": "controller"
+			},
+			"directoryName": {
+				"type": "string",
+				"defaultValue": "metadados"
+			},
+			"fileName": {
+				"type": "string",
+				"defaultValue": "controller_poc.xlsx"
+			},
+			"sheetName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": {
+				"value": "@dataset().sheetName",
+				"type": "Expression"
+			},
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().fileName",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().directoryName",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().containerName",
+					"type": "Expression"
+				}
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

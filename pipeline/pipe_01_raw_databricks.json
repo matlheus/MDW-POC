@@ -1,0 +1,134 @@
+{
+	"name": "pipe_01_raw_databricks",
+	"properties": {
+		"activities": [
+			{
+				"name": "lookup_controller",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_xlsx_generic",
+						"type": "DatasetReference",
+						"parameters": {
+							"containerName": "controller",
+							"directoryName": "metadados",
+							"fileName": "controller_poc.xlsx",
+							"sheetName": "transient_to_raw"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Filter_flagController",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "lookup_controller",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('lookup_controller').output.value",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().flag_controller, '1')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach_Databricks",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter_flagController",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter_flagController').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "transient_to_raw",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/notebooks_poc/01_raw/transient_to_raw",
+								"baseParameters": {
+									"directory_transient": {
+										"value": "@item().directory_transient",
+										"type": "Expression"
+									},
+									"file_transient": {
+										"value": "@item().file_transient",
+										"type": "Expression"
+									},
+									"columns_merge": {
+										"value": "@item().columns_merge",
+										"type": "Expression"
+									},
+									"container_target": {
+										"value": "@item().container_target",
+										"type": "Expression"
+									},
+									"raw_delta_table_name": {
+										"value": "@item().raw_delta_table_name",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_databricks",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "02_ETL"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-10-25T12:29:36Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

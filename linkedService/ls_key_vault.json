@@ -1,0 +1,11 @@
+{
+	"name": "ls_key_vault",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://akv-poc-generica-luiz.vault.azure.net/"
+		}
+	}
+}

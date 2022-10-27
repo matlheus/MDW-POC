@@ -1,0 +1,115 @@
+{
+	"name": "pipe_03_refined_databricks",
+	"properties": {
+		"activities": [
+			{
+				"name": "lookup_controller",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_xlsx_generic",
+						"type": "DatasetReference",
+						"parameters": {
+							"containerName": "controller",
+							"directoryName": "metadados",
+							"fileName": "controller_poc.xlsx",
+							"sheetName": "notebooks_refined"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Filter_flagController",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "lookup_controller",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('lookup_controller').output.value",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().flag_controller, '1')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach_Databricks",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter_flagController",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter_flagController').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "etl_refined",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@item().path_notebook",
+									"type": "Expression"
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_databricks",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "02_ETL"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-10-25T16:51:10Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}
